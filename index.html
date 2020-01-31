@@ -36,8 +36,6 @@ function init(){
 	canvas.width = window.innerWidth;
 	canvas.height = window.innerHeight;
 
-	sfx.bg.play();
-
 	setInterval(HUUUNGUNUGNUNGUHUGHUHUHUHUH,500)
 
 	update();
@@ -77,6 +75,7 @@ var mouse = (function(){
 	canvas.addEventListener('touchmove', canvasMove);
 
 	function down(){
+		sfx.bg.play();
 		m.down = true;
 	}
 	function up(){
