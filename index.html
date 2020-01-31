@@ -1,0 +1,399 @@
+<html>
+<head>
+	<style>
+body{
+	border:0;
+	padding:0;
+	margin:0;
+	background: black url('bg.jpg') repeat center;
+	background-size: cover;
+}
+	</style>
+</head>
+<body>
+	<canvas id="canvas"></canvas>
+
+	<script>
+
+var spongebob = new Image();
+	spongebob.src = "spongebob.jpg";
+var patrick = new Image();
+	patrick.src = "patrick.jpg";
+
+var sfx = {
+	bg:new Audio("bg.m4a"),
+	spongebob:new Audio("lol.m4a"),
+	patrick:new Audio("patrick.m4a"),
+}
+
+var canvas = document.getElementById("canvas");
+var ctx = canvas.getContext("2d");
+
+var requestAnimationFrame = window.requestAnimationFrame || window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame || window.msRequestAnimationFrame || setTimeout;
+
+
+function init(){
+	canvas.width = window.innerWidth;
+	canvas.height = window.innerHeight;
+
+	sfx.bg.play();
+
+	setInterval(HUUUNGUNUGNUNGUHUGHUHUHUHUH,500)
+
+	update();
+}
+function HUUUNGUNUGNUNGUHUGHUHUHUHUH(){
+	if(ragdolls.length>50) ragdolls.splice(0,1);
+	new ragdoll();// oh god make it stop
+}
+
+function update(){
+	ctx.clearRect(0,0,canvas.width,canvas.height);
+
+	for(var i=0;i<ragdolls.length;i++){
+		ragdolls[i].update();
+	}
+
+	requestAnimationFrame(update);
+}
+
+var mouse = (function(){
+	var m = {
+		x:0,
+		y:0,
+		down:false,
+		dragging:false,
+	}
+	function set(x,y){
+		m.x = x;
+		m.y = y;
+	}
+
+	document.addEventListener('mousedown', down);
+	document.addEventListener('mouseup', up);
+	document.addEventListener('mousemove', move);
+	canvas.addEventListener('touchstart', canvasDown);
+	canvas.addEventListener('touchend', canvasUp);
+	canvas.addEventListener('touchmove', canvasMove);
+
+	function down(){
+		m.down = true;
+	}
+	function up(){
+		m.down = false;
+		m.dragging = false;
+	}
+	function move(e){
+		set(e.clientX,e.clientY);
+	}
+	function canvasMove(e) {
+		if(e.touches.length == 1) {
+			e.preventDefault();
+			set(e.touches[0].pageX,e.touches[0].pageY);
+		}
+	}
+	function canvasDown(e) {
+		if(e.touches.length == 1) {
+			sfx.bg.play();
+			sfx.spongebob.play();
+			e.preventDefault();
+			set(e.touches[0].pageX,e.touches[0].pageY);
+			down();
+		}
+	}
+	function canvasUp(e) {
+		up();
+	}
+
+
+
+	return m;
+})();
+
+
+var draw = (function(){
+
+	var reference = !true;
+
+	function line(p1,p2){
+		if(reference){
+			ctx.save();
+				ctx.beginPath();
+				ctx.strokeStyle = "#ff0000";
+				ctx.moveTo(p1.x,p1.y);
+				ctx.lineTo(p2.x,p2.y);
+				ctx.stroke();
+			ctx.restore();
+		}
+	}
+	function rect(a){
+		if(reference){
+			ctx.save();
+				ctx.globalAlpha = 0.2;
+				ctx.translate(a.x, a.y);
+				ctx.rotate((a.rotation+90)*Math.PI/180);
+				ctx.fillStyle = "#ffffff";
+				ctx.fillRect(0,0,a.width,a.height);
+			ctx.restore();
+		}
+	}
+	function texture(a,img){
+		if(!reference){
+			ctx.save();
+	    		ctx.translate(a.x, a.y);
+				ctx.rotate((a.rotation+90)*Math.PI/180);
+				ctx.fillStyle = "#ffffff";
+				ctx.drawImage(img,0,0,a.width,a.height);
+			ctx.restore();
+		}
+	}
+
+	return{
+		line,
+		rect,
+		texture
+	}
+})();
+
+function hitTest(p1,p2){
+	return ( (p1.x > p2.x && p1.x < p2.x+p2.width) && (p1.y > p2.y && p1.y < p2.y+p2.height) );
+}
+
+
+
+var ragdolls = [];
+var ragdoll = function(){
+	var boxes = [];
+	create();
+
+	var isPatrick = (Math.random()*10<1);
+
+	if(!isPatrick) sfx.spongebob.play()
+	if(isPatrick) sfx.patrick.play()
+
+	ragdolls.push({
+		update
+	});
+
+	function create(){
+		var x = Math.random()*canvas.width;
+		var y = 10;
+		var width = 60;
+		var height = 100;
+
+		// make a person
+		boxes.push( new cube({
+			x:x,
+			y:y,
+			width:width,
+			height:height + Math.random()*50,
+		}) );
+		boxes.push( new cube({
+			x:x + 20,
+			y:y - 60,
+			width:60,
+			height:60,
+		}) );
+		boxes.push( new cube({
+			x:x - 20,
+			y:y,
+			width:20,
+			height:160,
+		}) );
+		boxes.push( new cube({
+			x:x + width,
+			y:y,
+			width:20,
+			height:160,
+		}) );
+		boxes.push( new cube({
+			x:x,
+			y:y + height,
+			width:20,
+			height:110 + Math.random()*50,
+		}) );
+		boxes.push( new cube({
+			x:x + width - 20,
+			y:y + height,
+			width:20,
+			height:110 + Math.random()*50,
+		}) );
+	}
+
+	function update(){
+
+		for(var i=0;i<boxes.length;i++){
+			boxes[i].update(isPatrick);
+		}
+		
+		//neck
+		physics.constraint(boxes[0].nodes[0], boxes[1].nodes[3], 20);
+		physics.constraint(boxes[0].nodes[1], boxes[1].nodes[2], 20);
+		
+		//shoulders
+		physics.constraint(boxes[0].nodes[0], boxes[2].nodes[1], 1);
+		physics.constraint(boxes[0].nodes[1], boxes[3].nodes[0], 1);
+		
+		//dem hips
+		physics.constraint(boxes[0].nodes[3], boxes[4].nodes[1], 1);
+		physics.constraint(boxes[0].nodes[2], boxes[5].nodes[0], 1);
+	}
+}
+
+
+var node = (function(){
+	function create(arg){
+		arg = arg || {};
+		return {
+			x:(arg.x||0),
+			y:(arg.y||0),
+			width:(arg.width||20),
+			height:(arg.height||20),
+			rotation:(arg.rotation||0),
+			vx:(arg.vy||0),
+			vy:(arg.vy||0),
+		}
+	}
+	return {
+		create
+	}
+
+})();
+
+var cube = function(properties){
+
+	var nodes = [];
+	properties = properties || {
+		x:mouse.x,
+		y:mouse.y,
+		width:100,
+		height:100,
+	}
+	create();
+
+	function create(){
+		nodes.push( node.create({
+			x:properties.x,
+			y:properties.y,
+		}) );
+		nodes.push( node.create({
+			x:properties.x+properties.width,
+			y:properties.y,
+		}) );
+		nodes.push( node.create({
+			x:properties.x+properties.width,
+			y:properties.y+properties.height,
+		}) );
+		nodes.push( node.create({
+			x:properties.x,
+			y:properties.y+properties.height,
+		}) );
+	}
+	function constraints(){
+		var hypotenuse = Math.sqrt((properties.width*properties.width) + (properties.height*properties.height));
+		physics.constraint(nodes[0],nodes[1],properties.width,true);
+		physics.constraint(nodes[1],nodes[2],properties.height,true);
+		physics.constraint(nodes[2],nodes[3],properties.width,true);
+		physics.constraint(nodes[3],nodes[0],properties.height,true);
+
+		physics.constraint(nodes[0],nodes[2],hypotenuse);
+		physics.constraint(nodes[1],nodes[3],hypotenuse);
+	}
+	function update(isPatrick){
+		for (var i=0; i<nodes.length; i++) {
+			var a = nodes[i];
+
+			if(mouse.down && hitTest(mouse,a) && !mouse.dragging) mouse.dragging = a;
+			if(mouse.dragging == a){
+				a.vx = 0;
+				a.vy = 0;
+				a.x = mouse.x;
+				a.y = mouse.y;
+			}
+
+			physics.update(a);
+			draw.rect(a);
+		}
+		constraints();
+
+		var rect = nodes[0];
+
+		if(!isPatrick) draw.texture(rect,spongebob);
+		if(isPatrick) draw.texture(rect,patrick);
+		rect.width = properties.width;
+		rect.height = properties.height;
+		draw.rect(rect);
+	}
+	return {
+		update,
+		nodes,
+	}
+}
+
+
+
+var physics = (function(){
+	function constraint(p1, p2, length, rotate) {
+		draw.line(p1,p2);
+		if(rotate) getRotation(p2,p1);
+
+		var xd = (p2.x+p2.vx)-(p1.x+p1.vx);
+		var yd = (p2.y+p2.vy)-(p1.y+p1.vy);
+		var dis = Math.sqrt(xd*xd+yd*yd);
+		var force = (length-dis)/dis*0.5;
+
+		p1.vx -= force*xd;
+		p1.vy -= force*yd;
+		p2.vx += force*xd;
+		p2.vy += force*yd;
+	}
+
+	function getRotation(p1, p2) {
+		var yd = p1.y-p2.y;
+		var xd = p1.x-p2.x;
+		var ang = Math.atan2(yd, xd)*180/Math.PI;
+		p1.rotation = ang;
+	}
+
+	function update(a) {
+		var gravity = 0.2;
+		var friction = 0.7;
+
+		a.vy += 1*gravity;
+		a.y += a.vy;
+
+		a.x += a.vx;
+
+		while(a.y>canvas.height) {
+			a.vy = 0;
+			a.y--;
+
+			a.vx *= 0.25;
+		}
+		while(a.y<0) {
+			a.vy = 0;
+			a.y++;
+		}
+		while(a.x>canvas.width) {
+			a.vx = 0;
+			a.x--;
+		}
+		while(a.x<0) {
+			a.vx = 0;
+			a.x++;
+		}
+
+	}
+
+	return {
+		update,
+		constraint,
+	}
+})();
+
+
+init();
+	</script>
+
+</body>
+</html>
