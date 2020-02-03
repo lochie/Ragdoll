@@ -165,7 +165,7 @@ var ragdoll = function(){
 	var boxes = [];
 	create();
 
-	var isPatrick = (Math.random()*10<1);
+	var isPatrick = (Math.random()<0.5);
 
 	if(!isPatrick) sfx.spongebob.play()
 	if(isPatrick) sfx.patrick.play()
